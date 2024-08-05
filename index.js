@@ -27,6 +27,7 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+// Define a user
 const user = {
   id: "baf609b4-cac8-4b48-b663-e149d00edc46",
 };
@@ -47,12 +48,19 @@ const storage = multer.diskStorage({
 
   // Set the file name
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${nanoid(10)}${path.extname(file.originalname)}`;
+    const uniqueSuffix = `${nanoid(10)}_${file.originalname}`;
+    // const uniqueSuffix = `${nanoid(10)}${path.extname(file.originalname)}`;
     cb(null, uniqueSuffix);
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    // 500kb
+    fileSize: 500 * 1024,
+  },
+});
 
 // Serve static files from the uploads directory
 app.use(`/${UPLOAD_DIR}`, express.static(path.join(__dirname, UPLOAD_DIR)));
@@ -117,6 +125,16 @@ app.get("/images", (req, res) => {
 
     res.status(200).json({ images: imageUrls });
   });
+});
+
+// Endpoint to handle invalid routes
+app.use("*", (req, res) => {
+  res.status(404).json({ error: "Invalid route" });
+});
+
+// Endpoint to handle server errors
+app.use((err, req, res, next) => {
+  res.status(500).json({ error: err.message });
 });
 
 app.listen(PORT, () => {
